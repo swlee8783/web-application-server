@@ -31,11 +31,19 @@ public class RequestHandler extends Thread {
             DataOutputStream dos = new DataOutputStream(out);
             BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
             String line = br.readLine();
+            
+            // line이 null값을 가질 경우에 대한 예외 처리
             if (line == null) {
             	return;
             }
             String [] tokens = line.split(" ");
-            byte[] body = Files.readAllBytes(new File("./webapp" + tokens[1]).toPath());
+            String url = tokens[1];
+            
+            while(!"".equals(line)) {
+            	log.info(line);
+            	line = br.readLine();
+            }
+            byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
