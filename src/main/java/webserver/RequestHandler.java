@@ -9,9 +9,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import model.User;
+import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -38,12 +42,20 @@ public class RequestHandler extends Thread {
             }
             String [] tokens = line.split(" ");
             String url = tokens[1];
+            String [] tokens_2 = url.split("\\?");
+            String path = tokens_2[0];
+            if (tokens_2.length > 1) {
+            	String args = tokens_2[1];
+            	Map<String, String> queryStringMap = HttpRequestUtils.parseQueryString(args);
+                User user = new User(queryStringMap.get("userId"), queryStringMap.get("password"), queryStringMap.get("name"), queryStringMap.get("email"));
+            };
             
             while(!"".equals(line)) {
             	log.info(line);
             	line = br.readLine();
             }
-            byte[] body = Files.readAllBytes(new File("./webapp" + url).toPath());
+            
+            byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
             response200Header(dos, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
