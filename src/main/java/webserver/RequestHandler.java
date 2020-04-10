@@ -46,8 +46,10 @@ public class RequestHandler extends Thread {
             String path = tokens_2[0];
             if (tokens_2.length > 1) {
             	String args = tokens_2[1];
-            	Map<String, String> queryStringMap = HttpRequestUtils.parseQueryString(args);
-                User user = new User(queryStringMap.get("userId"), queryStringMap.get("password"), queryStringMap.get("name"), queryStringMap.get("email"));
+            	Map<String, String> queryString = HttpRequestUtils.parseQueryString(args);
+                User user = new User(queryString.get("userId"), queryString.get("password"), queryString.get("name"), queryString.get("email"));
+                log.debug("User: {}", user);
+                path = "/index.html";
             };
             
             while(!"".equals(line)) {
