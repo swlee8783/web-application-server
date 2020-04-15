@@ -33,7 +33,6 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            DataOutputStream dos = new DataOutputStream(out);
             BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
             String line = br.readLine();
             
@@ -45,13 +44,13 @@ public class RequestHandler extends Thread {
             String url = tokens[1];
             String [] tokens_2 = url.split("\\?");
             String path = tokens_2[0];
-            /**if (tokens_2.length > 1) {
+            if (tokens_2.length > 1) {
             	String args = tokens_2[1];
             	Map<String, String> queryString = HttpRequestUtils.parseQueryString(args);
                 User user = new User(queryString.get("userId"), queryString.get("password"), queryString.get("name"), queryString.get("email"));
                 log.debug("User: {}", user);
                 path = "/index.html";
-            };**/
+            };
             
             int c_length = 0;
     		while(!"".equals(line)) {
@@ -68,17 +67,33 @@ public class RequestHandler extends Thread {
         		Map<String, String> queryString = HttpRequestUtils.parseQueryString(query);
         		User user = new User(queryString.get("userId"), queryString.get("password"), queryString.get("name"), queryString.get("email"));
         		log.debug("User: {}", user);
-        		path ="/index.html";
+        		
+                DataOutputStream dos = new DataOutputStream(out);
+                response302Header(dos);
+        	}
+        	else {
+                DataOutputStream dos = new DataOutputStream(out);
+                byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
+                response200Header(dos, body.length);
+                responseBody(dos, body);
         	}
             
-            byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
-            response200Header(dos, body.length);
-            responseBody(dos, body);
+
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
-
+    private void response302Header(DataOutputStream dos) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+    
+    
     private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
