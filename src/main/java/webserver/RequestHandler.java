@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import model.User;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -44,18 +45,31 @@ public class RequestHandler extends Thread {
             String url = tokens[1];
             String [] tokens_2 = url.split("\\?");
             String path = tokens_2[0];
-            if (tokens_2.length > 1) {
+            /**if (tokens_2.length > 1) {
             	String args = tokens_2[1];
             	Map<String, String> queryString = HttpRequestUtils.parseQueryString(args);
                 User user = new User(queryString.get("userId"), queryString.get("password"), queryString.get("name"), queryString.get("email"));
                 log.debug("User: {}", user);
                 path = "/index.html";
-            };
+            };**/
             
-            while(!"".equals(line)) {
-            	log.info(line);
+            int c_length = 0;
+    		while(!"".equals(line)) {
+            	//log.info(line);
+            	if (line.startsWith("Content-Length")) {
+            		String [] post_resources = line.split(" ");
+            		c_length = Integer.parseInt(post_resources[1]);
+            		log.debug("Content-Length Found: {}", c_length);
+            	}
             	line = br.readLine();
             }
+        	String query = IOUtils.readData(br, c_length);
+        	if(query.startsWith("userId")) {
+        		Map<String, String> queryString = HttpRequestUtils.parseQueryString(query);
+        		User user = new User(queryString.get("userId"), queryString.get("password"), queryString.get("name"), queryString.get("email"));
+        		log.debug("User: {}", user);
+        		path ="/index.html";
+        	}
             
             byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
             response200Header(dos, body.length);
