@@ -143,9 +143,11 @@ public class RequestHandler extends Thread {
                 response302Header(dos);
             }
     		
+    		String [] mimeType = path.split("\\.");
 			DataOutputStream dos = new DataOutputStream(out);
             body = Files.readAllBytes(new File("./webapp" + path).toPath());
-            response200Header(dos, body.length);
+            //response200Header(dos,body.length);
+            response200HeaderMimeType(dos, body.length, mimeType[mimeType.length - 1]);
             responseBody(dos, body);
 
     		
@@ -187,16 +189,28 @@ public class RequestHandler extends Thread {
         }
     }
       
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
+    private void response200HeaderMimeType(DataOutputStream dos, int lengthOfBodyContent, String mimeType) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Type: text/" + mimeType + ";charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
+    
+    
+  private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
+      try {
+          dos.writeBytes("HTTP/1.1 200 OK \r\n");
+          dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+          dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+          dos.writeBytes("\r\n");
+      } catch (IOException e) {
+          log.error(e.getMessage());
+      }
+  }
 
     private void responseBody(DataOutputStream dos, byte[] body) {
         try {
