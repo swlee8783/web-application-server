@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ public class RequestHandler extends Thread {
             String url = tokens[1];
             String path = url;
         	String query = "";
+        	byte [] body = null;
                    
             if(url.startsWith("/user/create")) {
 	            String [] tokens_2 = url.split("\\?");
@@ -59,6 +61,8 @@ public class RequestHandler extends Thread {
             }
             
             int c_length = 0;
+            String cookie = "";
+            
     		while(!"".equals(line)) {
             	log.info(line);
             	if (line.startsWith("Content-Length")) {
@@ -66,21 +70,63 @@ public class RequestHandler extends Thread {
             		c_length = Integer.parseInt(post_resources[1]);
             		log.debug("Content-Length Found: {}", c_length);
             	}
+            	else if(line.startsWith("Cookie")) {
+            		String [] cookie_resources = line.split(" ");
+            		cookie = cookie_resources[1];
+            	}
             	line = br.readLine();
             }
     		
             if(url.equals("/user/login")) {
             	query = IOUtils.readData(br, c_length);
             	Map<String, String> LoginQueryString = HttpRequestUtils.parseQueryString(query);
-            	if(DataBase.findUserById(LoginQueryString.get("userId"))!=null) {
-            		path = "/index.html";
+            	User user = DataBase.findUserById(LoginQueryString.get("userId"));
+            	if(user == null) {
+            		log.debug("Login Failed");
             		DataOutputStream dos = new DataOutputStream(out);
-            		responseLoginSuccess200Header(dos);
+            		responseLoginFailed302Header(dos);
+            	}
+            	else if(user.getPassword().equals(LoginQueryString.get("password"))) {
+            		log.debug("Login Success");
+            		DataOutputStream dos = new DataOutputStream(out);
+            		responseLoginSuccess302Header(dos);
             	} 
             	else {
-            		path = "/index.html";
+            		log.debug("Login Failed");
             		DataOutputStream dos = new DataOutputStream(out);
-            		responseLoginFailed200Header(dos);
+            		responseLoginFailed302Header(dos);
+            	}
+            }
+            
+            if(url.startsWith("/user/list")) {
+            	Map<String, String> UserList = HttpRequestUtils.parseCookies(cookie);
+            	if(Boolean.parseBoolean(UserList.get("logined"))==true) {
+            		Collection<User> users = DataBase.findAll();
+            		StringBuilder sb = new StringBuilder();
+            		sb.append("<table border='1'>");
+            		for(User user : users) {
+            			sb.append("<tr>");
+            			sb.append("<td>ID</td>");
+            			sb.append("<td>NAME</td>");
+            			sb.append("<td>EMAIL</td>");
+            			sb.append("</tr>");
+            			sb.append("<tr>");
+            			sb.append("<td>" + user.getUserId() + "</td>");
+            			sb.append("<td>" + user.getName() + "</td>");
+            			sb.append("<td>" + user.getEmail().replace("%40", "@") + "</td>");
+            			sb.append("</tr>");
+            		}
+            		sb.append("</table>");
+            		
+                    DataOutputStream dos = new DataOutputStream(out);
+                    //byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
+                    body = sb.toString().getBytes();
+                    response200Header(dos, body.length);
+                    responseBody(dos, body);
+            		
+            	}
+            	else {
+            		
             	}
             	
             }
@@ -97,18 +143,22 @@ public class RequestHandler extends Thread {
                 response302Header(dos);
             }
     		
-            DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
+			DataOutputStream dos = new DataOutputStream(out);
+            body = Files.readAllBytes(new File("./webapp" + path).toPath());
             response200Header(dos, body.length);
             responseBody(dos, body);
+
+    		
+
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
-    private void responseLoginSuccess200Header(DataOutputStream dos) {
+    
+    private void responseLoginSuccess302Header(DataOutputStream dos) {
         try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html\r\n");
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: /index.html\r\n");
             dos.writeBytes("Set-Cookie: logined=true\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
@@ -116,10 +166,10 @@ public class RequestHandler extends Thread {
         }
     }
     
-    private void responseLoginFailed200Header(DataOutputStream dos) {
+    private void responseLoginFailed302Header(DataOutputStream dos) {
         try {
-            dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html\r\n");
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");            
+            dos.writeBytes("Location: /index.html\r\n");
             dos.writeBytes("Set-Cookie: logined=false\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
