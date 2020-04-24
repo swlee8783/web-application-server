@@ -47,8 +47,9 @@ public class RequestHandler extends Thread {
             String path = url;
         	String query = "";
         	byte [] body = null;
-                   
-            if(url.startsWith("/user/create")) {
+                
+        	//GET 방식 회원가입 구현
+            /**if(url.startsWith("/user/create")) {
 	            String [] tokens_2 = url.split("\\?");
 	            path = tokens_2[0];
 	            if (tokens_2.length > 1) {
@@ -58,11 +59,12 @@ public class RequestHandler extends Thread {
 	                log.debug("User: {}", user);
 	                path = "/index.html";
 	            };
-            }
+            }**/
             
             int c_length = 0;
             String cookie = "";
             
+            // HTTP HEADER 읽어오는 부분
     		while(!"".equals(line)) {
             	log.info(line);
             	if (line.startsWith("Content-Length")) {
@@ -77,6 +79,7 @@ public class RequestHandler extends Thread {
             	line = br.readLine();
             }
     		
+    		// LOGIN 구현
             if(url.equals("/user/login")) {
             	query = IOUtils.readData(br, c_length);
             	Map<String, String> LoginQueryString = HttpRequestUtils.parseQueryString(query);
@@ -98,6 +101,7 @@ public class RequestHandler extends Thread {
             	}
             }
             
+            // LIST로 이동시 회원정보 출력
             if(url.startsWith("/user/list")) {
             	Map<String, String> UserList = HttpRequestUtils.parseCookies(cookie);
             	if(Boolean.parseBoolean(UserList.get("logined"))==true) {
@@ -128,6 +132,7 @@ public class RequestHandler extends Thread {
             	
             }
     		
+            //POST 방식 회원가입 기능 구현
     		if(url.startsWith("/user/create")) {
     			query = IOUtils.readData(br, c_length);
         		Map<String, String> queryString = HttpRequestUtils.parseQueryString(query);
@@ -140,6 +145,7 @@ public class RequestHandler extends Thread {
                 response302Header(dos);
             }
     		
+    		//CSS 적용
     		String [] mimeType = path.split("\\.");
 			DataOutputStream dos = new DataOutputStream(out);
             body = Files.readAllBytes(new File("./webapp" + path).toPath());
