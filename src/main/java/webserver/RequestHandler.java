@@ -125,9 +125,6 @@ public class RequestHandler extends Thread {
                     responseBody(dos, body);
             		
             	}
-            	else {
-            		
-            	}
             	
             }
     		
