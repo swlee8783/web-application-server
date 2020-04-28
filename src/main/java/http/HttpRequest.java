@@ -19,7 +19,6 @@ public class HttpRequest {
 	private Map<String, String> headers = new HashMap<String, String>();
 	private Map<String, String> params = new HashMap<String, String>();
 	private String method;
-	private String path;
 	private RequestLine requestLine;
 	
 	public HttpRequest(InputStream in) {
@@ -31,59 +30,37 @@ public class HttpRequest {
 				return;
 			}
 			
-			RequestLine(line);
+			requestLine = new RequestLine(line);
 			
 			line = br.readLine();
 			
-			while(!"".equals(line)) {
+			while(!line.equals("")) {
 				log.debug("Header: {}", line);
 				String[] tokens = line.split(":");
 				headers.put(tokens[0].trim(), tokens[1].trim());
 				line = br.readLine();
 			}
 			
-			if ("POST".equals(method)) {
+			if ("POST".equals(getMethod())) {
 				String query = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
+				log.debug(query);
 				params = HttpRequestUtils.parseQueryString(query);
 			} else {
-				requestLine.getParams();
+				params = requestLine.getParams();
 			}
 		} catch(IOException e) {
 			log.error(e.getMessage());
 		}
 	}
 	
-	private void RequestLine(String requestLine) {
-		log.debug("Request line: {}", requestLine);
-		String [] tokens = requestLine.split(" ");
-		method = tokens[0];
-		
-		if ("POST".equals(method)) {
-			path = tokens[1];
-			log.debug("PATH: {}", path);
-			return;
-		}
-		
-		Integer index = tokens[1].indexOf("?");
-		
-		if (index == -1) {
-			path = tokens[1];
-			log.debug("PATH: {}", path);
-		} else {
-			path = tokens[1].substring(0, index);
-			log.debug("PATH: {}", path);
-			params = HttpRequestUtils.parseQueryString(tokens[1].substring(index + 1));
-		}	
-	}
-	
 	public String getMethod() {
-		log.debug("getMethod_Answer: {}",method);
-		return method;
+		log.debug("getMethod_Answer: {}",requestLine.getMethod());
+		return requestLine.getMethod();
 	}
 	
 	public String getPath() {
-		log.debug("getPath_Answer: {}",path);
-		return path;
+		log.debug("getPath_Answer: {}",requestLine.getPath());
+		return requestLine.getPath();
 	}
 	
 	public String getHeader(String field_name) {

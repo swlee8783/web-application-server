@@ -24,6 +24,7 @@ public class RequestLine {
 		}
 		
 		method = tokens[0];
+		log.debug("Method: {}", method);
 		
 		if ("POST".equals(method)) {
 			path = tokens[1];
