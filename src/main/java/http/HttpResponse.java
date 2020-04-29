@@ -1,66 +1,94 @@
 package http;
 
-import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import util.HttpRequestUtils;
-import util.IOUtils;
-import http.RequestLine;
 
 public class HttpResponse {
 	private static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
 	
 	private Map<String, String> headers = new HashMap<String, String>();
 	private Map<String, String> params = new HashMap<String, String>();
-	private String method;
-	private RequestLine requestLine;
+	private DataOutputStream dos = null;
 	
-	public HttpResponse(InputStream in) {
+	public HttpResponse(OutputStream out) {
+        dos = new DataOutputStream(out);
+        //body = sb.toString().getBytes();
+        //response200Header(dos, body.length);
+        //responseBody(dos, body);
+	}
+	
+	public void addHeader(String key, String value) {
+		headers.put(key, value);
+	}
+	
+	public void forward(String path) {
 		try {
-			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-			String line = br.readLine();
-			
-			if(line == null) {
-				return;
-			}
-			
-			requestLine = new RequestLine(line);
-			
-			line = br.readLine();
-			
-			while(!line.equals("")){
-				log.debug("Header: {}", line);
-				String[] tokens = line.split(":");
-				log.debug(tokens[0]);
-				log.debug(tokens[1]);
-				headers.put(tokens[0].trim(), tokens[1].trim());
-				line = br.readLine();
-			}
-			
-			if ("POST".equals(method)) {
-				String query = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
-				params = HttpRequestUtils.parseQueryString(query);
+			byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
+			if (path.endsWith(".css")) {
+				headers.put("Content-Type", "text/css");
+			} else if (path.endsWith(".js")) {
+				headers.put("Content-Type", "application/javascript");
 			} else {
-				params = requestLine.getParams();
+				headers.put("Content-Type", "text/html;charset=utf-8");
 			}
-		}
-		catch(IOException e) {
+			headers.put("Content-Length", body.length + "");
+			response200Header(body.length);
+			responseBody(body);
+		}  catch (IOException e) {
+            log.error(e.getMessage());
+        }
+	}
+    
+    private void response200Header(int lengthOfBodyContent) {
+        try {
+            dos.writeBytes("HTTP/1.1 200 OK \r\n");
+            processHeaders();
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+    
+    private void responseBody(byte[] body) {
+        try {
+            dos.write(body, 0, body.length);
+            dos.flush();
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+    
+	public void sendRedirect(String path) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            processHeaders();
+            dos.writeBytes("Location: " + path + " \r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+	}
+	
+	private void processHeaders() {
+		try {
+			Iterator<Map.Entry<String, String>> iteratorE = headers.entrySet().iterator();
+			while(iteratorE.hasNext()) {
+				Map.Entry<String, String> entry = (Map.Entry<String, String>) iteratorE.next();
+				String key = entry.getKey();
+				String value = entry.getValue();
+				dos.writeBytes(key + ": " + value + " \r\n");
+			}
+		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
-	}
-	
-	public String getHeader(String field_name) {
-		return headers.get(field_name);
-	}
-	
-	public String getParameter(String param_name) {
-		return params.get(param_name);
 	}
 }
