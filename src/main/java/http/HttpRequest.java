@@ -43,7 +43,7 @@ public class HttpRequest {
 			
 			if ("POST".equals(getMethod())) {
 				String query = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
-				log.debug(query);
+				//log.debug(query);
 				params = HttpRequestUtils.parseQueryString(query);
 			} else {
 				params = requestLine.getParams();
@@ -54,22 +54,22 @@ public class HttpRequest {
 	}
 	
 	public String getMethod() {
-		log.debug("getMethod_Answer: {}",requestLine.getMethod());
+		//log.debug("getMethod_Answer: {}",requestLine.getMethod());
 		return requestLine.getMethod();
 	}
 	
 	public String getPath() {
-		log.debug("getPath_Answer: {}",requestLine.getPath());
+		//log.debug("getPath_Answer: {}",requestLine.getPath());
 		return requestLine.getPath();
 	}
 	
 	public String getHeader(String field_name) {
-		log.debug("getHeader_Answer: {}",headers.get(field_name));
+		//log.debug("getHeader_Answer: {}",headers.get(field_name));
 		return headers.get(field_name);
 	}
 	
 	public String getParameter(String param_name) {
-		log.debug("getParameter_Answer: {}",params.get(param_name));
+		//log.debug("getParameter_Answer: {}",params.get(param_name));
 		return params.get(param_name);
 	}
 }
