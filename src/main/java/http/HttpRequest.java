@@ -18,7 +18,6 @@ public class HttpRequest {
 	
 	private Map<String, String> headers = new HashMap<String, String>();
 	private Map<String, String> params = new HashMap<String, String>();
-	private String method;
 	private RequestLine requestLine;
 	
 	public HttpRequest(InputStream in) {
@@ -45,9 +44,11 @@ public class HttpRequest {
 				String query = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
 				//log.debug(query);
 				params = HttpRequestUtils.parseQueryString(query);
-			} else {
-				params = requestLine.getParams();
+				return;
 			}
+			
+			params = requestLine.getParams();
+		
 		} catch(IOException e) {
 			log.error(e.getMessage());
 		}

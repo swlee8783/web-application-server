@@ -24,21 +24,17 @@ public class RequestLine {
 		}
 		
 		method = tokens[0];
-		log.debug("Method: {}", method);
-		
-		if ("POST".equals(method)) {
-			path = tokens[1];
-			return;
-		}
+		//log.debug("Method: {}", method);
 		
 		Integer index = tokens[1].indexOf("?");
 		
-		if (index == -1) {
+		if ("POST".equals(method) || index == -1) {
 			path = tokens[1];
-		} else {
-			path = tokens[1].substring(0, index);
-			params = HttpRequestUtils.parseQueryString(tokens[1].substring(index + 1));
-		}		
+			return;
+		}
+
+		path = tokens[1].substring(0, index);
+		params = HttpRequestUtils.parseQueryString(tokens[1].substring(index + 1));
 	}
 	
 	public String getMethod() {
