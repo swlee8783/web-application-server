@@ -47,6 +47,14 @@ public class HttpResponse {
             log.error(e.getMessage());
         }
 	}
+	
+	public void forwardBody(String body) {
+		byte [] body_2 = body.getBytes();
+		headers.put("Content-Type", "text/html;charset=utf-8");
+		headers.put("Content-Length", body_2.length + "");
+		response200Header(body_2.length); //왜 length가 필요할까?
+		responseBody(body_2);	
+	}
     
     private void response200Header(int lengthOfBodyContent) {
         try {
