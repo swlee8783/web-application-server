@@ -12,12 +12,12 @@ import http.HttpResponse;
 import model.User;
 import util.HttpRequestUtils;
 
-public class ListUserController implements Controller{
+public class ListUserController extends AbstractController{
 	private static final Logger log = 
 			LoggerFactory.getLogger(CreateUserController.class);
 
 	@Override
-	public void service(HttpRequest req, HttpResponse res) {
+	public void doGet(HttpRequest req, HttpResponse res) {
 		// TODO Auto-generated method stub
     	Map<String, String> cookies = HttpRequestUtils.parseCookies(req.getHeader("Cookie"));
     	Boolean isLogined = Boolean.parseBoolean(cookies.get("logined"));
