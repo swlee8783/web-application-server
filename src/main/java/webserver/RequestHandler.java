@@ -10,6 +10,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import controller.Controller;
 import model.User;
 import util.HttpRequestUtils;
 import db.DataBase;
@@ -32,20 +33,16 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest req = new HttpRequest(in);
             HttpResponse res = new HttpResponse(out);
-            String path = defaultPath(req.getPath());
             
-            if("/user/create".equals(path)) {//회원가입 구현
-            	createUser(req, res);
+            Controller controller = RequestMapping.getController(req.getPath());
+            
+            if (controller == null) {
+                String path = defaultPath(req.getPath());
+                res.forward(path);
             }
-            else if("/user/login".equals(path)) {// LOGIN 구현
-            	login(req, res);
-            }            
-            else if("/user/list".equals(path)) {// LIST로 이동시 회원정보 출력
-            	listUser(req, res);
+            else {
+            	controller.service(req, res);
             }
-        	else {
-        		res.forward(path);
-        	}
         } catch (IOException e) {
             log.error(e.getMessage());
         }
